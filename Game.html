@@ -1,89 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Play With Mike's Flappy Butt!</title>
-    <style>
-        body { text-align: center; background-color: #f4a261; }
-        canvas { background: url('https://mikesflappybutt.s3.us-east-1.amazonaws.com/Background.png') repeat-x; display: block; margin: 0 auto; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play With Mike's Flappy Butt!</title>
+  <style>
+    body {
+      text-align: center;
+      background-color: #f4a261;
+    }
+    canvas {
+      background: url('https://mikesflappybutt.s3.us-east-1.amazonaws.com/Background.png')
+        repeat-x;
+      display: block;
+      margin: 0 auto;
+    }
+  </style>
 </head>
 <body>
-    <h1>Play With Mike's Flappy Butt!</h1>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        
-        const pig = new Image();
-        pig.src = "https://mikesflappybutt.s3.us-east-1.amazonaws.com/Pig.png"; // Flying pig image
-        
-        const grill = new Image();
-        grill.src = "https://mikesflappybutt.s3.us-east-1.amazonaws.com/Grill.png"; // Lit grill image
-        
-        let pigX = 50, pigY = 50, gravity = .35, lift = -6;
-        let velocity = 0;
-        let grills = [];
-        let score = 0;
-        let gameOver = false;
-        
-        function resetGame() {
-            pigY = 150;
-            velocity = 0;
-            grills = [{ x: canvas.width, y: Math.random() * (canvas.height - 150) + 50 }];
-            score = 0;
-            gameOver = false;
+  <h1>Play With Mike's Flappy Butt!</h1>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const pig = new Image();
+    pig.src = "https://mikesflappybutt.s3.us-east-1.amazonaws.com/Pig.png"; // Flying pig image
+
+    const grill = new Image();
+    grill.src = "https://mikesflappybutt.s3.us-east-1.amazonaws.com/Grill.png"; // Lit grill image
+
+    let pigX = 50, pigY = 50, gravity = 0.35, lift = -6;
+    let velocity = 0;
+    let grills = [];
+    let score = 0;
+    let gameOver = false;
+
+    // This variable is used to prevent multiple restart timers
+    let restartTimeout = null;
+
+    function resetGame() {
+      pigY = 150;
+      velocity = 0;
+      grills = [{ x: canvas.width, y: Math.random() * (canvas.height - 150) + 50 }];
+      score = 0;
+      gameOver = false;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(pig, pigX, pigY, 40, 40);
+
+      for (let i = 0; i < grills.length; i++) {
+        ctx.drawImage(grill, grills[i].x, grills[i].y, 50, 50);
+        grills[i].x -= 2;
+        if (grills[i].x === 150) {
+          grills.push({ x: canvas.width, y: Math.random() * (canvas.height - 150) + 50 });
         }
-        
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(pig, pigX, pigY, 40, 40);
-            
-            for (let i = 0; i < grills.length; i++) {
-                ctx.drawImage(grill, grills[i].x, grills[i].y, 50, 50);
-                grills[i].x -= 2;
-                if (grills[i].x === 150) { 
-                    grills.push({ x: canvas.width, y: Math.random() * (canvas.height - 150) + 50 });
-                }
-                
-                if (grills[i].x < pigX + 40 && grills[i].x + 50 > pigX && grills[i].y < pigY + 40 && grills[i].y + 50 > pigY) {
-                    gameOver = true;
-                }
-            }
-            
-            velocity += gravity;
-            pigY += velocity;
-            
-            if (pigY > canvas.height - 40 || pigY < 0) {
-                gameOver = true;
-            }
-            
-            ctx.fillStyle = "black";
-            ctx.font = "25px Abel";
-            ctx.textBaseline = "top"; // Aligns text properly
-            ctx.fillText("Score: " + score, 10, 10); // Moved lower to avoid cutoff
-            
-            if (gameOver) {
-                ctx.fillText("Game Over! Click to Restart", 50, 240);
-                return;
-            }
-            
-            score++;
-            requestAnimationFrame(draw);
+
+        // Collision detection
+        if (
+          grills[i].x < pigX + 40 &&
+          grills[i].x + 50 > pigX &&
+          grills[i].y < pigY + 40 &&
+          grills[i].y + 50 > pigY
+        ) {
+          gameOver = true;
         }
-        
-        document.addEventListener("click", function() {
-            if (gameOver) {
-                resetGame();
-                draw();
-            } else {
-                velocity = lift;
-            }
-        });
-        
-        resetGame();
-        draw();
-    </script>
+      }
+
+      velocity += gravity;
+      pigY += velocity;
+
+      if (pigY > canvas.height - 40 || pigY < 0) {
+        gameOver = true;
+      }
+
+      ctx.fillStyle = "black";
+      ctx.font = "25px Abel";
+      ctx.textBaseline = "top"; // Aligns text properly
+      ctx.fillText("Score: " + score, 10, 10);
+
+      if (gameOver) {
+        ctx.fillText("Game Over! Click to Restart", 50, 240);
+        return;
+      }
+
+      score++;
+      requestAnimationFrame(draw);
+    }
+
+    document.addEventListener("click", function () {
+      if (gameOver) {
+        // If the game is over, wait 1 second before restarting
+        if (!restartTimeout) {
+          restartTimeout = setTimeout(() => {
+            resetGame();
+            draw();
+            restartTimeout = null; // Reset the flag so future clicks work
+          }, 1500);
+        }
+      } else {
+        // Otherwise, make the pig "flap"
+        velocity = lift;
+      }
+    });
+
+    resetGame();
+    draw();
+  </script>
 </body>
 </html>
