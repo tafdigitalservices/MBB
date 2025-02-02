@@ -3,86 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Play Mike's Flappy Butt!</title>
+  <title>Flappy Game</title>
   <style>
-    body {
-      text-align: center;
-      background-color: #f4a261;
-    }
-    canvas {
-      background: url('https://mikesflappybutt.s3.us-east-1.amazonaws.com/Background.png')
-        repeat-x;
-      display: block;
-      margin: 0 auto;
-    }
+    body { text-align: center; background: #f4a261; margin: 0; }
+    canvas { display: block; margin: 20px auto; background: url('https://mikesflappybutt.s3.us-east-1.amazonaws.com/Background.png') repeat-x; border: 2px solid black; }
   </style>
 </head>
 <body>
-  <h1>Play Mike's Flappy Butt!</h1>
+  <h1>Play #mikesflappybutt</h1>
+  <h4>Keep tapping/clicking inside the game box to avoid burning your butt!</h4>
   <canvas id="gameCanvas" width="400" height="400"></canvas>
   <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
+    const canvas = document.getElementById("gameCanvas"), ctx = canvas.getContext("2d");
+    const pig = new Image(), grill = new Image();
+    pig.src = "https://mikesflappybutt.s3.us-east-1.amazonaws.com/Pig.png";
+    grill.src = "https://mikesflappybutt.s3.us-east-1.amazonaws.com/Grill.png";
 
-    const pig = new Image();
-    pig.src = "https://mikesflappybutt.s3.us-east-1.amazonaws.com/Pig.png"; // Flying pig image
-
-    const grill = new Image();
-    grill.src = "https://mikesflappybutt.s3.us-east-1.amazonaws.com/Grill.png"; // Lit grill image
-
-    let pigX = 50, pigY = 50, gravity = 0.35, lift = -6;
-    let velocity = 0;
-    let grills = [];
-    let score = 0;
-    let gameOver = false;
-
-    // This variable is used to prevent multiple restart timers
-    let restartTimeout = null;
+    let pigY, velocity, score, gameOver, highScore = localStorage.highScore || 0, grills = [];
 
     function resetGame() {
-      pigY = 150;
-      velocity = 0;
-      grills = [{ x: canvas.width, y: Math.random() * (canvas.height - 150) + 50 }];
-      score = 0;
-      gameOver = false;
+      pigY = 150; velocity = 0; score = 0; gameOver = false;
+      grills = [{ x: 400, y: Math.random() * 300 + 50 }];
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(pig, pigX, pigY, 40, 40);
+      ctx.drawImage(pig, 50, pigY, 40, 40);
 
-      for (let i = 0; i < grills.length; i++) {
-        ctx.drawImage(grill, grills[i].x, grills[i].y, 50, 50);
-        grills[i].x -= 2;
-        if (grills[i].x === 150) {
-          grills.push({ x: canvas.width, y: Math.random() * (canvas.height - 150) + 50 });
-        }
+      grills.forEach((g, i) => {
+        g.x -= 2;
+        ctx.drawImage(grill, g.x, g.y, 50, 50);
+        if (g.x < 90 && g.x + 50 > 50 && g.y < pigY + 40 && g.y + 50 > pigY) gameOver = true;
+        if (g.x < -50) grills.splice(i, 1);
+        if (g.x < 200 && grills.length < 2) grills.push({ x: 400, y: Math.random() * 300 + 50 });
+      });
 
-        // Collision detection
-        if (
-          grills[i].x < pigX + 40 &&
-          grills[i].x + 50 > pigX &&
-          grills[i].y < pigY + 40 &&
-          grills[i].y + 50 > pigY
-        ) {
-          gameOver = true;
-        }
-      }
-
-      velocity += gravity;
+      velocity += 0.35;
       pigY += velocity;
-
-      if (pigY > canvas.height - 40 || pigY < 0) {
-        gameOver = true;
-      }
+      if (pigY < 0 || pigY > 360) gameOver = true;
 
       ctx.fillStyle = "black";
-      ctx.font = "25px Abel";
-      ctx.textBaseline = "top"; // Aligns text properly
-      ctx.fillText("Score: " + score, 10, 10);
+      ctx.font = "18px Arial";
+      ctx.fillText(`Score: ${score}`, 10, 20); // Score (top-left)
+      ctx.fillText(`High Score: ${highScore}`, 240, 20); // High Score moved left for large numbers
 
       if (gameOver) {
-        ctx.fillText("Game Over! Click to Restart", 50, 240);
+        highScore = Math.max(highScore, score);
+        localStorage.highScore = highScore;
+        ctx.fillText("Game Over! Click to Restart", 100, 200);
         return;
       }
 
@@ -90,24 +58,8 @@
       requestAnimationFrame(draw);
     }
 
-    document.addEventListener("click", function () {
-      if (gameOver) {
-        // If the game is over, wait 1 second before restarting
-        if (!restartTimeout) {
-          restartTimeout = setTimeout(() => {
-            resetGame();
-            draw();
-            restartTimeout = null; // Reset the flag so future clicks work
-          }, 1100);
-        }
-      } else {
-        // Otherwise, make the pig "flap"
-        velocity = lift;
-      }
-    });
-
-    resetGame();
-    draw();
+    canvas.addEventListener("click", () => gameOver ? (resetGame(), draw()) : velocity = -6);
+    resetGame(); draw();
   </script>
 </body>
 </html>
