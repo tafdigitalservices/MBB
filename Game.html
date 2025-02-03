@@ -45,12 +45,12 @@
       ctx.fillStyle = "black";
       ctx.font = "18px Arial";
       ctx.fillText(`Score: ${score}`, 10, 20); // Score (top-left)
-      ctx.fillText(`High Score: ${highScore}`, 240, 20); // High Score moved left for large numbers
+      ctx.fillText(`High Score: ${highScore}`, 200, 20); // High Score moved slightly left
 
       if (gameOver) {
         highScore = Math.max(highScore, score);
         localStorage.highScore = highScore;
-        ctx.fillText("Game Over! Click to Restart", 100, 200);
+        ctx.fillText("Game Over! Tap to Restart", 100, 200);
         return;
       }
 
@@ -58,7 +58,18 @@
       requestAnimationFrame(draw);
     }
 
-    canvas.addEventListener("click", () => gameOver ? (resetGame(), draw()) : velocity = -6);
+    function handleTap() {
+      if (gameOver) {
+        resetGame();
+        draw();
+      } else {
+        velocity = -7; // More responsive jumping
+      }
+    }
+
+    canvas.addEventListener("click", handleTap);
+    canvas.addEventListener("touchstart", handleTap); // Improved mobile tap handling
+
     resetGame(); draw();
   </script>
 </body>
